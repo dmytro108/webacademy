@@ -1,0 +1,43 @@
+version: '3.6'
+
+services:
+  gitlab:
+    image: gitlab/gitlab-ee:latest
+    container_name: gitlab
+    restart: always
+    ports:
+      - '8929:8929'
+      - '2224:22'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://gitlab.example.com:8929'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2224
+        gitlab_rails['lfs_enabled'] = true
+        gitlab_rails['lfs_object_store_enabled'] = true
+        gitlab_rails['lfs_object_store_remote_directory'] = 'gitlab-lfs'
+        gitlab_rails['lfs_object_store_connection'] = {
+          'provider' => 'AWS',
+          'region' => 'us-east-1',
+          'endpoint' => 'http://minio:9000',
+          'path_style' => true,
+          'aws_access_key_id' => 'access_key',
+          'aws_secret_access_key' => 'secret_key'
+        }
+    volumes:
+      - '$GITLAB_HOME/config:/etc/gitlab'
+      - '$GITLAB_HOME/logs:/var/log/gitlab'
+      - '$GITLAB_HOME/data:/var/opt/gitlab'
+
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: minio_stor
+    restart: always
+    ports:
+      - 9000:9000
+      - 9090:9090
+    environment:
+      MINIO_ACCESS_KEY: $MINIO_ACCESS_KEY
+      MINIO_SECRET_KEY: $MINIO_SECRET_KEY
+    command: server /data
+    volumes:
+      - '$MINIO_HOME/data:/data'

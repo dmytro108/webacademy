@@ -39,7 +39,7 @@ services:
       - '$GITLAB_HOME/data:/var/opt/gitlab'
     shm_size: '256m'
 
-    minio:
+  minio:
     container_name: minio_stor
     image: 'quay.io/minio/minio'
     restart: always
@@ -52,5 +52,4 @@ services:
       - '9090:9090'
     volumes:
       - '$MINIO_HOME/data:/data'
-    command:
-      server /data --console-address :9090
+    command: server /data --console-address :9090
