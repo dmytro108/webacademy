@@ -1,4 +1,4 @@
-version: '3.6'
+version: '3.7'
 services:
   gitlab:
     container_name: gitlab_lfs
@@ -10,13 +10,12 @@ services:
         external_url 'http://gitlab.example.com:8888'
         gitlab_rails['gitlab_shell_ssh_port'] = 2224
         gitlab_rails['lfs_enabled'] = true
-        # Consolidated object storage configuration
         gitlab_rails['object_store']['enabled'] = true
         gitlab_rails['object_store']['proxy_download'] = true
         gitlab_rails['object_store']['connection'] = {
           'provider' => 'AWS',
           'region' => 'us-east-1',
-          'endpoint' => 'http://minio:9000',
+          'endpoint' => 'http://192.168.1.10:9000',
           'path_style' => true,
           'aws_access_key_id' => '$MINIO_ROOT_USER',
           'aws_secret_access_key' => '$MINIO_ROOT_PASSWORD'
@@ -33,6 +32,9 @@ services:
     ports:
       - '8888:8888'
       - '2224:22'
+    networks:
+      gitlab_minio:
+        ipv4_address: 192.168.1.30
     volumes:
       - '$GITLAB_HOME/config:/etc/gitlab'
       - '$GITLAB_HOME/logs:/var/log/gitlab'
@@ -43,13 +45,38 @@ services:
     container_name: minio_stor
     image: 'quay.io/minio/minio'
     restart: always
-    hostname: 'minio.example.com'
+    hostname: 'minio_stor'
     environment:
-      - 'MINIO_ROOT_USER = $MINIO_ROOT_USER'
-      - 'MINIO_ROOT_PASSWORD = $MINIO_ROOT_PASSWORD'
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
       - '9000:9000'
       - '9090:9090'
+    networks:
+      gitlab_minio:
+        ipv4_address: 192.168.1.10
     volumes:
       - '$MINIO_HOME/data:/data'
-    command: server /data --console-address :9090
+    command: server /data --console-address ':9090' --address ':9000'
+
+  createbuckets:
+    image: minio/mc
+    container_name: createbuckets
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set lfs-obj http://192.168.1.10:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      /usr/bin/mc mb lfs-obj/gitlab-lfs;
+      /usr/bin/mc policy set public lfs-obj/gitlab-lfs;
+      exit 0;
+      "
+    networks:
+      gitlab_minio:
+
+networks:
+  gitlab_minio:
+    ipam:
+      driver: default
+      config:
+        - subnet: "192.168.1.0/24"
