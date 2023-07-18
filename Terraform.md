@@ -1,0 +1,24 @@
+## Terraform materials
+- https://www.atlassian.com/continuous-delivery/principles/configuration-management
+- https://digital.ai/periodic-table-of-devops-tools
+- https://www.copado.com/devops-hub/blog/pets-vs-cattle-more-than-an-analogy-for-modern-infrastructures
+- https://eplexity.com/blog/a-side-by-side-comparison-of-immutable-vs-mutable-infrastructure/
+- https://medium.com/clarusway/imperative-approach-and-declarative-approach-in-automation-72cdfe82b1ae
+- https://www.guru99.com/software-configuration-management-tools.html
+- https://medium.com/@melsatar/software-development-life-cycle-models-and-methodologies-297cfe616a3a
+- https://www.terraform.io
+- https://registry.terraform.io/providers/gitlabhq/gitlab/latest/docs
+- https://registry.terraform.io/providers/hashicorp/aws/latest/docs
+- https://www.terraform.io/docs/language/settings/backends/index.html
+- https://www.terraform.io/docs/language/data-sources/index.html
+- https://www.terraform.io/docs/language/values/locals.html
+- https://www.terraform-best-practices.com/ 
+- https://geekflare.com/terraform-best-practices/
+- https://www.devopsagileskills.org/
+- https://github.com/antonbabenko/terraform-best-practices
+- https://www.terraform.io/language/meta-arguments/count
+- https://blog.gruntwork.io/terraform-tips-tricks-loops-if-statements-and-gotchas-f739bbae55f9
+- https://stackoverflow.com/questions/52538920/terraform-modules-using-a-git-branch-as-a-source
+- https://www.terraform.io/language/modules/syntax
+- https://github.com/terraform-linters/tflint
+- https://github.com/aquasecurity/tfsec
