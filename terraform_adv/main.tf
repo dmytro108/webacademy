@@ -14,7 +14,11 @@ module "gitlab_init" {
   proj_path  = var.project_path
   proj_descr = var.project_descr
 
-  grp_token_exp_in  = var.group_access_exp_in
-  proj_token_exp_in = var.project_access_exp_in
+  grp_token_exp_in  = var.group_access_exp
+  proj_token_exp_in = var.project_access_exp
   dpl_exp_in        = var.deployment_exp_in
+
+  #####
+  gitlab_api_token    = var.gitlab_token
+  gitlab_base_url = var.gitlab_url
 }

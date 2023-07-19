@@ -37,20 +37,34 @@ variable "proj_path" {
 }
 
 ## Access tockens variables ###########################################
-variable "proj_token_exp_in" {
-  description = "A time span when the project access token expires in"
+variable "proj_token_exp" {
+  description = "The tocken experation date"
   type        = string
-  default     = "30d"
+  default     = ""
 }
 
 variable "dpl_exp_in" {
   description = "A time span when the group deploy token expires in"
   type        = string
-  default     = "30d"
+  default     = ""
 }
 
-variable "grp_token_exp_in" {
-  description = "A time span when the group access token expires in"
+variable "grp_token_exp" {
+  description = "The tocken experation date"
   type        = string
-  default     = "30d"
+  default     = ""
+}
+
+###############################################
+## GitLab provider  vars #########################################
+variable "gitlab_base_url" {
+  type        = string
+  default     = ""
+  description = "Base URL of the GitLab server"
+}
+
+variable "gitlab_api_token" {
+  type        = string
+  default     = ""
+  description = "GitLab server token"
 }

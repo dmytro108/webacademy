@@ -18,10 +18,10 @@ resource "gitlab_project" "proj" {
   namespace_id           = gitlab_group.pub_grp.id
   default_branch         = "main"
 
-  #provisioner "local-exec" {
-  #  command = "curl -X DELETE --header 'PRIVATE-TOKEN: ${var.gitlab_token}' '${var.gitlab_url}/projects/${module.gitlab_init.proj_id}/protected_branches/main'"
-  # 
-  # }
+  provisioner "local-exec" {
+    command = "curl -X DELETE --header 'PRIVATE-TOKEN: ${var.gitlab_token}' '${var.gitlab_url}/projects/${module.gitlab_init.proj_id}/protected_branches/main'"
+   
+   }
 
   #push_rules {
   #  reject_unsigned_commits = true

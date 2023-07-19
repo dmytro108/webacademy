@@ -1,3 +1,4 @@
 {
-    "ansible.python.interpreterPath": "c:\\Program Files\\Python39\\python.exe"
+    "ansible.python.interpreterPath": "c:\\Program Files\\Python39\\python.exe",
+    "checkov.token": "81497145-3a08-412a-a7b8-ed1a1f5120d0"
 }
