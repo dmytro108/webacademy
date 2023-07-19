@@ -19,9 +19,10 @@ resource "gitlab_project" "proj" {
   default_branch         = "main"
 
   provisioner "local-exec" {
-    command = "curl -X DELETE --header 'PRIVATE-TOKEN: ${var.gitlab_token}' '${var.gitlab_url}/projects/${module.gitlab_init.proj_id}/protected_branches/main'"
-   
-   }
+    command = "curl -X DELETE --header 'PRIVATE-TOKEN: ${var.gitlab_api_token}' '${var.gitlab_base_url}/projects/${self.id}/protected_branches/main'"
+
+
+  }
 
   #push_rules {
   #  reject_unsigned_commits = true
@@ -32,16 +33,16 @@ resource "gitlab_project" "proj" {
 
 
 ## Protected branch
-#resource "gitlab_branch_protection" "main" {
-#  project                = gitlab_project.proj.id
-#  branch                 = gitlab_project.proj.default_branch
-#  push_access_level      = "maintainer"
-#  merge_access_level     = "maintainer"
-#  unprotect_access_level = "maintainer"
-#  allowed_to_push {
-#    group_id = gitlab_group.pub_grp.id
-#  }
-#  allowed_to_merge {
-#    group_id = gitlab_group.pub_grp.id
-#  }
-#}
+resource "gitlab_branch_protection" "main" {
+  project                = gitlab_project.proj.id
+  branch                 = gitlab_project.proj.default_branch
+  push_access_level      = "maintainer"
+  merge_access_level     = "maintainer"
+  unprotect_access_level = "maintainer"
+  #allowed_to_push {
+  #  group_id = gitlab_group.pub_grp.id
+  #}
+  #allowed_to_merge {
+  #  group_id = gitlab_group.pub_grp.id
+  #}
+}

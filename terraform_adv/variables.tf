@@ -50,20 +50,20 @@ variable "project_path" {
 }
 
 ## Access tockens variables ###########################################
-variable "project_access_exp_in" {
+variable "project_access_exp" {
   description = "A time span when the project access token expires in"
   type        = string
-  default     = "30d"
+  default     = ""
 }
 
 variable "deployment_exp_in" {
   description = "A time span when the group deploy token expires in"
   type        = string
-  default     = "30d"
+  default     = ""
 }
 
-variable "group_access_exp_in" {
+variable "group_access_exp" {
   description = "A time span when the group access token expires in"
   type        = string
-  default     = "30d"
+  default     = ""
 }
