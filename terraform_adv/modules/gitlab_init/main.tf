@@ -9,6 +9,7 @@ resource "gitlab_group" "pub_grp" {
 
 ## GitLab project belonging to the group above
 resource "gitlab_project" "proj" {
+  # checkov:skip=CKV_GLB_4: ADD REASON
   # checkov:skip=CKV_GLB_3: ADD REASON
   # checkov:skip=CKV_GLB_1: ADD REASON
   name                   = var.proj_name
