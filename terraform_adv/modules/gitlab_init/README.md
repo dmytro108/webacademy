@@ -1,31 +1,32 @@
 <!-- BEGIN_TF_DOCS -->
-## Requirements
 
-| Name | Version |
-|------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.0 |
-| <a name="requirement_gitlab"></a> [gitlab](#requirement\_gitlab) | 16.1.0 |
 
-## Providers
+## Example
 
-| Name | Version |
-|------|---------|
-| <a name="provider_gitlab"></a> [gitlab](#provider\_gitlab) | 16.1.0 |
+```hcl
+module "gitlab_init" {
+  source = "./modules/gitlab_init"
 
-## Modules
+  # Group variables
+  grp_name  = "StartUps"
+  grp_path  = "strt"
+  grp_descr = "Start-up projects"
 
-No modules.
+  # Project variables
+  proj_name  = "Project sources 1"
+  proj_path  = "proj1"
+  proj_descr = "An awesom app"
 
-## Resources
+  # Tokens expiration variables
+  grp_token_exp  = "2023-08-01"
+  proj_token_exp = "2023-08-01"
+  dpl_exp_in     = "24h"
 
-| Name | Type |
-|------|------|
-| [gitlab_branch_protection.main](https://registry.terraform.io/providers/gitlabhq/gitlab/16.1.0/docs/resources/branch_protection) | resource |
-| [gitlab_deploy_token.grp_token_dpl](https://registry.terraform.io/providers/gitlabhq/gitlab/16.1.0/docs/resources/deploy_token) | resource |
-| [gitlab_group.pub_grp](https://registry.terraform.io/providers/gitlabhq/gitlab/16.1.0/docs/resources/group) | resource |
-| [gitlab_group_access_token.grp_token_dev](https://registry.terraform.io/providers/gitlabhq/gitlab/16.1.0/docs/resources/group_access_token) | resource |
-| [gitlab_project.proj](https://registry.terraform.io/providers/gitlabhq/gitlab/16.1.0/docs/resources/project) | resource |
-| [gitlab_project_access_token.proj_token_dev](https://registry.terraform.io/providers/gitlabhq/gitlab/16.1.0/docs/resources/project_access_token) | resource |
+  # Gitlab API
+  gitlab_api_token = "f88b6f47-c4cf-4e98-a205-132b90b697d8"
+  gitlab_base_url  = "http://gitlab.example.com/api/v4/"
+}
+```
 
 ## Inputs
 
