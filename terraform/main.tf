@@ -42,13 +42,19 @@ resource "gitlab_group_variable" "gr1_var_MYVAR" {
 
 ## GitLab project belonging to the group above
 resource "gitlab_project" "pr1" {
+  # checkov:skip=CKV_GLB_1: ADD REASON
+  # checkov:skip=CKV_GLB_4: ADD REASON
   name                   = "Gitlab Configuration with Terraform"
   description            = "A repo for terraform configurations"
   visibility_level       = "public"
   path                   = "gitlab_terraform"
   initialize_with_readme = "true"
   namespace_id           = gitlab_group.gr1.id
+  push_rules {
+    prevent_secrets = true
+  }
 }
+
 
 ## Access token to the project
 resource "gitlab_project_access_token" "pr_tok1" {
