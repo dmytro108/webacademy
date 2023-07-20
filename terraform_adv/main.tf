@@ -1,7 +1,8 @@
-provider "gitlab" {
-  token    = var.gitlab_token
-  base_url = var.gitlab_url
-}
+## Moet to provider.tf generated with terragrunt
+#provider "gitlab" {
+#  token    = var.gitlab_token
+#  base_url = var.gitlab_url
+#}
 
 module "gitlab_init" {
   source = "./modules/gitlab_init"
