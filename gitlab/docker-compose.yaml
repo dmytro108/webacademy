@@ -1,4 +1,16 @@
 version: '3.7'
+
+## Create network for containers
+# GitLab IP: 192.168.1.30
+# Minio IP: 192.168.1.10
+networks:
+  gitlab_minio:
+    ipam:
+      driver: default
+      config:
+        - subnet: "192.168.1.0/24"
+
+## -------------- GitLab --------------------
 services:
   gitlab:
     container_name: gitlab_lfs
@@ -41,6 +53,7 @@ services:
       - '$GITLAB_HOME/data:/var/opt/gitlab'
     shm_size: '256m'
 
+## ------------------- MinIO S3 backets --------------------------------------
   minio:
     container_name: minio_stor
     image: 'quay.io/minio/minio'
@@ -59,6 +72,7 @@ services:
       - '$MINIO_HOME/data:/data'
     command: server /data --console-address ':9090' --address ':9000'
 
+## Service container for creating backets
   createbuckets:
     image: minio/mc
     container_name: createbuckets
@@ -67,16 +81,41 @@ services:
     entrypoint: >
       /bin/sh -c "
       /usr/bin/mc alias set lfs-obj http://192.168.1.10:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+
       /usr/bin/mc mb lfs-obj/gitlab-lfs;
+      /usr/bin/mc mb lfs-obj/gitlab-artifacts;
+      /usr/bin/mc mb lfs-obj/gitlab-mr-diffs;
+      /usr/bin/mc mb lfs-obj/gitlab-uploads;
+      /usr/bin/mc mb lfs-obj/gitlab-packages;
+      /usr/bin/mc mb lfs-obj/gitlab-dependency-proxy;
+      /usr/bin/mc mb lfs-obj/gitlab-terraform-state;
+      /usr/bin/mc mb lfs-obj/gitlab-ci-secure-files;
+      /usr/bin/mc mb lfs-obj/gitlab-pages;
+
       /usr/bin/mc policy set public lfs-obj/gitlab-lfs;
+      /usr/bin/mc policy set public lfs-obj/gitlab-artifacts;
+      /usr/bin/mc policy set public lfs-obj/gitlab-mr-diffs;
+      /usr/bin/mc policy set public lfs-obj/gitlab-uploads;
+      /usr/bin/mc policy set public lfs-obj/gitlab-packages;
+      /usr/bin/mc policy set public lfs-obj/gitlab-dependency-proxy;
+      /usr/bin/mc policy set public lfs-obj/gitlab-terraform-state;
+      /usr/bin/mc policy set public lfs-obj/gitlab-ci-secure-files;
+      /usr/bin/mc policy set public lfs-obj/gitlab-pages;
+
       exit 0;
       "
     networks:
       gitlab_minio:
 
-networks:
-  gitlab_minio:
-    ipam:
-      driver: default
-      config:
-        - subnet: "192.168.1.0/24"
+## --------------------------- GitLab Runner -----------------------------
+  gitlab-cicd-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name:  gitlab-runner
+    restart: always
+    depends_on:
+      - gitlab
+    volumes:
+      - '/srv/gitlab-runner/config:/etc/gitlab-runner'
+      - '/var/run/docker.sock:/var/run/docker.sock'
+    networks:
+      gitlab_minio:
