@@ -17,6 +17,14 @@ services:
     image: 'gitlab/gitlab-ee:latest'
     restart: always
     hostname: '${GITLAB_HOST}'
+    networks:
+      gitlab_minio:
+        ipv4_address: 192.168.1.30
+        aliases:
+          - "${GITLAB_HOST}"
+    ports:
+      - '8888:8888'
+      - '2224:22'
     env_file:
       - buckets.env
       - gitlab.env
@@ -45,12 +53,6 @@ services:
         gitlab_rails['object_store']['objects']['terraform_state']['bucket'] = '${TF_STATE}'
         gitlab_rails['object_store']['objects']['ci_secure_files']['bucket'] = '${CI_SECURE_FILES}'
         gitlab_rails['object_store']['objects']['pages']['bucket'] = '${PAGES}'
-    ports:
-      - '8888:8888'
-      - '2224:22'
-    networks:
-      gitlab_minio:
-        ipv4_address: 192.168.1.30
     volumes:
       - '$GITLAB_HOME/config:/etc/gitlab'
       - '$GITLAB_HOME/logs:/var/log/gitlab'

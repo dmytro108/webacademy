@@ -1,0 +1,85 @@
+stages:
+  - test
+  - deploy
+
+variables:
+    TF_MODULE_DIR: ${CI_PROJECT_DIR}/modules/gitlab-onboard
+
+##------------------- tfsec ----------------------------
+test-tfsec:
+  stage: test
+  image: aquasec/tfsec-ci
+  tags:
+    - tf-lint-sec
+  script:
+    - tfsec ${TF_MODULE_DIR} -f junit --out tfsec-report.xml
+  artifacts:
+    name: "${CI_JOB_NAME}-tfsec"
+    when: always
+    expire_in: 1 week
+    reports:
+      junit: "tfsec-report.xml"
+    paths:
+      - "tfsec-report.xml"
+
+## ----------------------------- tflint -------------------------------
+test-tflint:
+  stage: test
+  image:
+    name: ghcr.io/terraform-linters/tflint
+    entrypoint: [""]
+  tags:
+    - tf-lint-sec
+  script:
+    - tflint --init -c .tflint.hcl
+    - tflint --chdir=${TF_MODULE_DIR} -f junit > tflint-report.xml
+  artifacts:
+    name: "${CI_JOB_NAME}-tflint"
+    when: always
+    expire_in: 1 week
+    reports:
+      junit: tflint-report.xml
+    paths:
+      - tflint-report.xml
+
+## -------------------- checkov ---------------------------
+test-checkov:
+  stage: test
+  image:
+    name: bridgecrew/checkov:latest
+    entrypoint:
+      - '/usr/bin/env'
+      - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+  tags:
+    - test-chekov
+  script:
+    - checkov -d ${TF_MODULE_DIR} -o junitxml | tee checkov-report.xml
+  artifacts:
+    name: "${CI_JOB_NAME}-checkov"
+    when: always
+    expire_in: 1 week
+    reports:
+      junit: "checkov-report.xml"
+    paths:
+      - "checkov-report.xml"
+
+## ---------------------- Deploy module ----------------------------------
+upload:
+  stage: deploy
+  image: curlimages/curl:latest
+  rules:
+    - if: $CI_COMMIT_TAG
+  needs:
+    - test-tflint
+    - test-tfsec
+    - test-checkov
+  variables:
+    TF_MODULE_NAME: ${CI_PROJECT_NAME}  # The name of your Terraform module, must not have any spaces or underscores (will be translated to hyphens).
+    TF_MODULE_SYSTEM: local             # The system or provider your Terraform module targets (ex. local, aws, google).
+    TF_MODULE_VERSION: ${CI_COMMIT_TAG} # The version - it's recommended to follow SemVer for Terraform Module Versioning.
+  script:
+    - TF_MODULE_NAME=$(echo "${TF_MODULE_NAME}" | tr " _" -) # module-name must not have spaces or underscores, so translate them to hyphens
+    - tar  -vczf /tmp/${TF_MODULE_NAME}-${TF_MODULE_SYSTEM}-${TF_MODULE_VERSION}.tgz -C ${TF_MODULE_DIR} --exclude=./.git .
+    - 'curl --fail --location --header "JOB-TOKEN: ${CI_JOB_TOKEN}"
+         --upload-file /tmp/${TF_MODULE_NAME}-${TF_MODULE_SYSTEM}-${TF_MODULE_VERSION}.tgz
+         ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/terraform/modules/${TF_MODULE_NAME}/${TF_MODULE_SYSTEM}/${TF_MODULE_VERSION}/file'
