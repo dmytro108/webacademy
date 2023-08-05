@@ -1,6 +1,6 @@
 version: '3.7'
 
-## Create network for containers
+## ------------- Network -------------------
 # GitLab IP: 192.168.1.30
 # Minio IP: 192.168.1.10
 networks:
@@ -16,10 +16,14 @@ services:
     container_name: gitlab_lfs
     image: 'gitlab/gitlab-ee:latest'
     restart: always
-    hostname: 'gitlab.example.com'
+    hostname: '${GITLAB_HOST}'
+    env_file:
+      - buckets.env
+      - gitlab.env
+      - minio.env
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        external_url 'http://gitlab.example.com:8888'
+        external_url 'http://${GITLAB_HOST}:8888'
         gitlab_rails['gitlab_shell_ssh_port'] = 2224
         gitlab_rails['lfs_enabled'] = true
         gitlab_rails['object_store']['enabled'] = true
@@ -32,15 +36,15 @@ services:
           'aws_access_key_id' => '$MINIO_ROOT_USER',
           'aws_secret_access_key' => '$MINIO_ROOT_PASSWORD'
         }
-        gitlab_rails['object_store']['objects']['artifacts']['bucket'] = 'gitlab-artifacts'
-        gitlab_rails['object_store']['objects']['external_diffs']['bucket'] = 'gitlab-mr-diffs'
-        gitlab_rails['object_store']['objects']['lfs']['bucket'] = 'gitlab-lfs'
-        gitlab_rails['object_store']['objects']['uploads']['bucket'] = 'gitlab-uploads'
-        gitlab_rails['object_store']['objects']['packages']['bucket'] = 'gitlab-packages'
-        gitlab_rails['object_store']['objects']['dependency_proxy']['bucket'] = 'gitlab-dependency-proxy'
-        gitlab_rails['object_store']['objects']['terraform_state']['bucket'] = 'gitlab-terraform-state'
-        gitlab_rails['object_store']['objects']['ci_secure_files']['bucket'] = 'gitlab-ci-secure-files'
-        gitlab_rails['object_store']['objects']['pages']['bucket'] = 'gitlab-pages'
+        gitlab_rails['object_store']['objects']['artifacts']['bucket'] = '${ARTIFACTS}'
+        gitlab_rails['object_store']['objects']['external_diffs']['bucket'] = '${DIFFS}'
+        gitlab_rails['object_store']['objects']['lfs']['bucket'] = '${LFS}'
+        gitlab_rails['object_store']['objects']['uploads']['bucket'] = '${UPLOADS}'
+        gitlab_rails['object_store']['objects']['packages']['bucket'] = '${PACKAGES}'
+        gitlab_rails['object_store']['objects']['dependency_proxy']['bucket'] = '${DEPENDENCY_PROXY}'
+        gitlab_rails['object_store']['objects']['terraform_state']['bucket'] = '${TF_STATE}'
+        gitlab_rails['object_store']['objects']['ci_secure_files']['bucket'] = '${CI_SECURE_FILES}'
+        gitlab_rails['object_store']['objects']['pages']['bucket'] = '${PAGES}'
     ports:
       - '8888:8888'
       - '2224:22'
@@ -59,6 +63,8 @@ services:
     image: 'quay.io/minio/minio'
     restart: always
     hostname: 'minio_stor'
+    env_file:
+      - minio.env
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
@@ -78,29 +84,32 @@ services:
     container_name: createbuckets
     depends_on:
       - minio
+    env_file:
+      - buckets.env
+      - minio.env
     entrypoint: >
       /bin/sh -c "
       /usr/bin/mc alias set lfs-obj http://192.168.1.10:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
 
-      /usr/bin/mc mb lfs-obj/gitlab-lfs;
-      /usr/bin/mc mb lfs-obj/gitlab-artifacts;
-      /usr/bin/mc mb lfs-obj/gitlab-mr-diffs;
-      /usr/bin/mc mb lfs-obj/gitlab-uploads;
-      /usr/bin/mc mb lfs-obj/gitlab-packages;
-      /usr/bin/mc mb lfs-obj/gitlab-dependency-proxy;
-      /usr/bin/mc mb lfs-obj/gitlab-terraform-state;
-      /usr/bin/mc mb lfs-obj/gitlab-ci-secure-files;
-      /usr/bin/mc mb lfs-obj/gitlab-pages;
+      /usr/bin/mc mb lfs-obj/${ARTIFACTS};
+      /usr/bin/mc mb lfs-obj/${DIFFS};
+      /usr/bin/mc mb lfs-obj/${LFS};
+      /usr/bin/mc mb lfs-obj/${UPLOADS};
+      /usr/bin/mc mb lfs-obj/${PACKAGES};
+      /usr/bin/mc mb lfs-obj/${DEPENDENCY_PROXY};
+      /usr/bin/mc mb lfs-obj/${TF_STATE};
+      /usr/bin/mc mb lfs-obj/${CI_SECURE_FILES};
+      /usr/bin/mc mb lfs-obj/${PAGES};
 
-      /usr/bin/mc policy set public lfs-obj/gitlab-lfs;
-      /usr/bin/mc policy set public lfs-obj/gitlab-artifacts;
-      /usr/bin/mc policy set public lfs-obj/gitlab-mr-diffs;
-      /usr/bin/mc policy set public lfs-obj/gitlab-uploads;
-      /usr/bin/mc policy set public lfs-obj/gitlab-packages;
-      /usr/bin/mc policy set public lfs-obj/gitlab-dependency-proxy;
-      /usr/bin/mc policy set public lfs-obj/gitlab-terraform-state;
-      /usr/bin/mc policy set public lfs-obj/gitlab-ci-secure-files;
-      /usr/bin/mc policy set public lfs-obj/gitlab-pages;
+      /usr/bin/mc policy set public lfs-obj/${ARTIFACTS};
+      /usr/bin/mc policy set public lfs-obj/${DIFFS};
+      /usr/bin/mc policy set public lfs-obj/${LFS};
+      /usr/bin/mc policy set public lfs-obj/${UPLOADS};
+      /usr/bin/mc policy set public lfs-obj/${PACKAGES};
+      /usr/bin/mc policy set public lfs-obj/${DEPENDENCY_PROXY};
+      /usr/bin/mc policy set public lfs-obj/${TF_STATE};
+      /usr/bin/mc policy set public lfs-obj/${CI_SECURE_FILES};
+      /usr/bin/mc policy set public lfs-obj/${PAGES};
 
       exit 0;
       "
