@@ -1,0 +1,120 @@
+node1:> ################### Task 0 ################################
+node1:> ## 1. Запустити container з Redis з обмеженнями 256 Мб ОЗУ та 0,5 CPU
+node1:> docker build -t "my-redis:latest" .
+[+] Building 0.2s (8/8) FINISHED                                                                                docker:default
+ => [internal] load .dockerignore                                                                                         0.1s
+ => => transferring context: 2B                                                                                           0.0s
+ => [internal] load build definition from Dockerfile                                                                      0.1s
+ => => transferring dockerfile: 440B                                                                                      0.0s
+ => [internal] load metadata for docker.io/library/alpine:latest                                                          0.0s
+ => [1/4] FROM docker.io/library/alpine:latest                                                                            0.0s
+ => CACHED [2/4] RUN apk update && apk add libcgroup && apk add cgroup-tools                                              0.0s
+ => CACHED [3/4] RUN apk add redis                                                                                        0.0s
+ => CACHED [4/4] WORKDIR /data                                                                                            0.0s
+ => exporting to image                                                                                                    0.0s
+ => => exporting layers                                                                                                   0.0s
+ => => writing image sha256:f196ff396a93e564e598d692256298190474cd2cebc6de1fb5bca119b43f92f1                              0.0s
+ => => naming to docker.io/library/my-redis:latest                                                                        0.0s
+node1:> docker run -d  --cpuset-cpus="1" --cpu-period=100000 --cpu-quota=50000  --memory="256m" --name Redis  my-redis:latest
+4399eaf12694d2e5e181fd46ec8cbe32c9a245a7a47110beabb772f3e49fb117
+node1:> docker exec Redis cgget -r memory.max -r cpu.max  -r cpuset.cpus  /
+/:
+memory.max: 268435456
+cpu.max: 50000 100000
+cpuset.cpus: 1
+
+node1:> docker inspect --format="Memory max: {{.HostConfig.Memory}}B  CPU set: {{.HostConfig.CpusetCpus}}  CPU max {{.HostConfig.CpuPeriod}} {{.HostConfig.CpuQuota}}" Redis
+Memory max: 268435456B  CPU set: 1  CPU max 100000 50000
+node1:>
+node1:> ################### Task 0 ################################
+node1:> ## 2.Запустити container з Redis з іменованим volume та створити декілька ключів
+node1:>
+node1:> docker run -d  --rm -v ./RedisData:/data  --name Redis-1  my-redis:latest
+01521ab1db0e4b7d7fbf188a8121ba102d205753fe17bbcba7d72d29ed0f806a
+node1:>  docker exec  Redis-1 redis-cli set myKey1 22
+OK
+node1:>  docker exec  Redis-1 redis-cli set myKey2 Hello!
+OK
+node1:>  docker exec  Redis-1 redis-cli save
+OK
+node1:> docker stop Redis-1
+Redis-1
+node1:> ls ./RedisData/
+dump.rdb
+node1:> docker run -d  --rm -v ./RedisData:/data  --name Redis-2  my-redis:latest
+67b18cbe015b002d8a30fe531e41fd6c215e326c26e989a13d5eef6e9389aa18
+node1:>  docker exec  Redis-1 redis-cli get myKey1
+Error response from daemon: No such container: Redis-1
+node1:>  docker exec  Redis-2 redis-cli get myKey1
+22
+node1:>  docker exec  Redis-2 redis-cli get myKey2
+Hello!
+node1:> docker stop Redis-2
+Redis-2
+node1:>
+node1:> ########################## Task 1 ###################
+node1:> ## Збілдити docker image Python flask
+node1:>
+node1:> docker build -t "my-app:latest"  .
+[+] Building 0.9s (10/10) FINISHED                                                                              docker:default
+ => [internal] load build definition from Dockerfile                                                                      0.0s
+ => => transferring dockerfile: 227B                                                                                      0.0s
+ => [internal] load .dockerignore                                                                                         0.0s
+ => => transferring context: 2B                                                                                           0.0s
+ => [internal] load metadata for docker.io/library/python:latest                                                          0.8s
+ => [1/5] FROM docker.io/library/python@sha256:85b3d192dddbc96588b719e86991e472b390805a754681a38132de1977d8e429           0.0s
+ => [internal] load build context                                                                                         0.0s
+ => => transferring context: 28B                                                                                          0.0s
+ => CACHED [2/5] RUN pip install Flask redis                                                                              0.0s
+ => CACHED [3/5] RUN mkdir app                                                                                            0.0s
+ => CACHED [4/5] COPY ./app.py /app/app.py                                                                                0.0s
+ => CACHED [5/5] WORKDIR /app                                                                                             0.0s
+ => exporting to image                                                                                                    0.0s
+ => => exporting layers                                                                                                   0.0s
+ => => writing image sha256:cdd98e5f1076e9e839cf10a837a8ba53ad4511d1dfcf48ab4aa0197a36bf9fa1                              0.0s
+ => => naming to docker.io/library/my-app:latest                                                                          0.0s
+node1:> cat run.sh
+docker run -d --network="host" --rm  --name Redis -v ./RedisData:/data my-redis:latest
+docker run -d --network="host" --rm  --name my-app-py my-app:latest
+node1:> ./run.sh
+e9d147b722c99b79796f28cdb2ef6041fafd01ed0df0706157c36159fdfea36a
+6efde437924eeb2a96ab57590bb0845648e446a37a53e592a8b7ddbbf4777ca2
+node1:> curl http://localhost:5000/redis/myKey1
+{
+  "key": "myKey1",
+  "value": "22"
+}
+node1:> curl http://localhost:5000/redis/myKey2
+{
+  "key": "myKey2",
+  "value": "Hello!"
+}
+node1:> ###################### Task 2 ###############################
+node1:>
+node1:> docker build -t "my-app-dt:latest"  .
+[+] Building 0.7s (9/9) FINISHED                                                                                docker:default
+ => [internal] load build definition from Dockerfile                                                                      0.0s
+ => => transferring dockerfile: 203B                                                                                      0.0s
+ => [internal] load .dockerignore                                                                                         0.0s
+ => => transferring context: 2B                                                                                           0.0s
+ => [internal] load metadata for docker.io/library/python:latest                                                          0.7s
+ => [internal] load build context                                                                                         0.0s
+ => => transferring context: 27B                                                                                          0.0s
+ => [1/4] FROM docker.io/library/python@sha256:85b3d192dddbc96588b719e86991e472b390805a754681a38132de1977d8e429           0.0s
+ => CACHED [2/4] RUN mkdir app                                                                                            0.0s
+ => CACHED [3/4] COPY ./dt.py /app/app.py                                                                                 0.0s
+ => CACHED [4/4] WORKDIR /app                                                                                             0.0s
+ => exporting to image                                                                                                    0.0s
+ => => exporting layers                                                                                                   0.0s
+ => => writing image sha256:8904f335d9ecc49fe7dc90f656419c2ee29548b4c416cd921a43c066ea885094                              0.0s
+ => => naming to docker.io/library/my-app-dt:latest                                                                       0.0s
+node1:> docker run -d  --rm --name py_app-dt --env "PYTHONUNBUFFERED=1" my-app-dt:latest
+ca78e7a20f3b11118a61aeb1af15aa95a66a236ff88c2799c349c2eab05ea087
+node1:> docker logs -f  py_app-dt
+Current date and time: 2023-08-17 15:32:25.667935
+Current date and time: 2023-08-17 15:32:35.670030
+Current date and time: 2023-08-17 15:32:45.670715
+^C
+node1:> docker stop py_app-dt
+py_app-dt
+node1:>
