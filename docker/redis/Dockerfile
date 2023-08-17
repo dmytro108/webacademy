@@ -10,3 +10,4 @@ ENTRYPOINT [ "redis-server" ]
 EXPOSE 6379
 WORKDIR /data
 #VOLUME /data
+
