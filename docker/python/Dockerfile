@@ -1,8 +1,5 @@
-FROM python
-RUN mkdir app
-COPY ./dt.py /app/app.py
+FROM python:latest
 WORKDIR /app
-ENTRYPOINT [ "python", "app.py" ]
-#CMD [ "app.py" ]
-# flashing python output
+COPY dt.py app.py
 ENV PYTHONUNBUFFERED=1
+ENTRYPOINT [ "python", "app.py" ]
