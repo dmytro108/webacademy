@@ -26,7 +26,7 @@ services:
 # -------------------------------- Python app with flask
   flask_app:
     container_name: web
-    image: flask_app:0.0.2
+    image: flask_app:0.0.3
     network_mode: host
     environment:
       - "REDIS_HOST=127.0.0.1"
