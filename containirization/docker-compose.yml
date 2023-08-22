@@ -1,38 +1,48 @@
 version: "3.7"
 
+# All services utilizing host network in order to connect
+# to the Redis without sredebtials
 services:
+
+# ---------------------------- Redis database with persistant storage
   redis:
-    container_name: db
+    container_name: redis-db
     image: my-redis:0.0.1
     volumes:
       - "./RedisData:/data"
-    network_mode: "host"
-    cpu_period: "10000"
-    cpu_quota: "5000"
-    cpu_count: 1
-    mem_limit: "256M"
+    network_mode: host
     healthcheck:
       test: "redis-cli ping"
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 5s
+    # Resource limits: CPU: 0.5, RAM: 256 Mb
+    cpu_period: "10000"
+    cpu_quota: "5000"
+    cpu_count: 1
+    mem_limit: "256M"
 
+# -------------------------------- Python app with flask
   flask_app:
     container_name: web
-    image: flask_app:0.0.1
-    network_mode: "host"
+    image: flask_app:0.0.2
+    network_mode: host
+    environment:
+      - "REDIS_HOST=127.0.0.1"
+      - "REDIS_PORT=6379"
     depends_on:
       redis:
          condition: service_healthy
          restart: true
-      db-init:
-        condition: service_started
 
+# ---------------------------------- Initilize the Redis db with test values
   db-init:
     container_name: db-init
     image: my-redis:0.0.1
-    network_mode: "host"
+    profiles:
+      - db-init
+    network_mode: host
     entrypoint: >
       /bin/sh -c 'redis-cli -h localhost -p 6379 set MyKey1 Hello;
                   redis-cli -h localhost -p 6379 set MyKey2 World;

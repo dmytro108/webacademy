@@ -16,7 +16,7 @@ FROM python:slim-bullseye@sha256:1226f32ad1c1c36e0b6e79706059761c58ada308f4a1ad7
 
 RUN useradd -r -u 999 -U python \
    && mkdir /usr/app && chown python:python /usr/app
-   
+
 WORKDIR /usr/app
 
 COPY --chown=python:python --from=build /usr/app/venv ./venv
@@ -26,3 +26,8 @@ USER 999
 
 ENV PATH="/usr/app/venv/bin:$PATH"
 CMD [ "gunicorn", "--bind", "0.0.0.0:5000", "app:app" ]
+
+ARG redis_host
+ARG redis_port
+ENV REDIS_HOST=${redis_host}
+ENV REDIS_PORT=${redis_port}
