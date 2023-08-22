@@ -1,0 +1,44 @@
+version: "3.7"
+
+services:
+  redis:
+    container_name: db
+    image: my-redis:0.0.1
+    volumes:
+      - "./RedisData:/data"
+    network_mode: "host"
+    cpu_period: "10000"
+    cpu_quota: "5000"
+    cpu_count: 1
+    mem_limit: "256M"
+    healthcheck:
+      test: "redis-cli ping"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  flask_app:
+    container_name: web
+    image: flask_app:0.0.1
+    network_mode: "host"
+    depends_on:
+      redis:
+         condition: service_healthy
+         restart: true
+      db-init:
+        condition: service_started
+
+  db-init:
+    container_name: db-init
+    image: my-redis:0.0.1
+    network_mode: "host"
+    entrypoint: >
+      /bin/sh -c 'redis-cli -h localhost -p 6379 set MyKey1 Hello;
+                  redis-cli -h localhost -p 6379 set MyKey2 World;
+                  redis-cli -h localhost -p 6379 set timestamp "$(date)";
+                  exit 0;'
+    depends_on:
+      redis:
+        condition: service_healthy
+        restart: true
