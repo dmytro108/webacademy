@@ -12,7 +12,7 @@ services:
       - "./RedisData:/data"
     network_mode: host
     healthcheck:
-      test: "redis-cli ping"
+      test: "pg_isready"
       interval: 10s
       timeout: 5s
       retries: 5
