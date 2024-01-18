@@ -104,8 +104,8 @@ services:
     volumes:
       - '$MINIO_HOME/data:/data'
 
-## Creates the buckets for GitLab to use.
-# The service running a Minio CLI to set up a public buckets in the Minio storage for GitLab’s LFS objects
+## ------------- Minio initialization container -------------------
+# The service running a Minio CLI to set up a public buckets for GitLab’s LFS objects
   createbuckets:
     image: minio/mc
     container_name: createbuckets
