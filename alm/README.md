@@ -141,4 +141,4 @@ To facilitate a range of environments across multiple project, the [Terragrunt t
 
 To uphold the integrity and quality of the Terraform configuration, the [tf-lint tool](project-iac/.tflint.hcl) was utilized for meticulous linting, ensuring best practices and consistency in the code.
 
-Additionally, [the documentation](project-iac/.terraorm-docs.yml) for the Terraform configuration and the module was automatically generated using terraform-docs. 
+Additionally, [the documentation](project-iac/.terraform-docs.yml) for the Terraform configuration and the module was automatically generated using terraform-docs. 
