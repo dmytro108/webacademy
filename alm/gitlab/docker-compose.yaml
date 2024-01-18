@@ -10,26 +10,34 @@ networks:
       config:
         - subnet: "192.168.1.0/24"
 
-## -------------- GitLab --------------------
+## --------------- Storrage -------------------
+volumes:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+  postgresql:
+  postgresql_data:
+  
+## -------------- GitLab EE --------------------
 services:
   gitlab:
     container_name: gitlab_lfs
-    image: 'gitlab/gitlab-ee:latest'
-    restart: always
-    hostname: '${GITLAB_HOST}'
-    networks:
-      gitlab_minio:
-        ipv4_address: 192.168.1.30
-        aliases:
-          - "${GITLAB_HOST}"
+    image: 'gitlab/gitlab-ee:latest' # the latest version of the GitLab Enterprise Edition
+    hostname: '${GITLAB_HOST}'    
+
+    # GitLab is reachable on port 8888 and SSH is reachable on port 2224
     ports:
       - '8888:8888'
       - '2224:22'
+
     env_file:
       - buckets.env
       - gitlab.env
       - minio.env
+
     environment:
+      # enable Git Large File Storage (LFS) and interfacing with an object storage system Minio
+      # The endpoint parameter points to the Minio server      
       GITLAB_OMNIBUS_CONFIG: |
         external_url 'http://${GITLAB_HOST}:8888'
         gitlab_rails['gitlab_shell_ssh_port'] = 2224
@@ -53,46 +61,61 @@ services:
         gitlab_rails['object_store']['objects']['terraform_state']['bucket'] = '${TF_STATE}'
         gitlab_rails['object_store']['objects']['ci_secure_files']['bucket'] = '${CI_SECURE_FILES}'
         gitlab_rails['object_store']['objects']['pages']['bucket'] = '${PAGES}'
+
     volumes:
       - '$GITLAB_HOME/config:/etc/gitlab'
       - '$GITLAB_HOME/logs:/var/log/gitlab'
       - '$GITLAB_HOME/data:/var/opt/gitlab'
+
+    networks:
+      gitlab_minio:
+        ipv4_address: 192.168.1.30
+        aliases:
+          - "${GITLAB_HOST}"
+
     shm_size: '256m'
+    restart: always
 
 ## ------------------- MinIO S3 backets --------------------------------------
+  # Minio is an object storage server that is compatible with Amazon S3
+  # It is used to store GitLab’s LFS objects
   minio:
     container_name: minio_stor
     image: 'quay.io/minio/minio'
     restart: always
     hostname: 'minio_stor'
+
+    command: server /data --console-address ':9090' --address ':9000'
+
     env_file:
       - minio.env
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+
     ports:
       - '9000:9000'
       - '9090:9090'
+
     networks:
       gitlab_minio:
         ipv4_address: 192.168.1.10
+
     volumes:
       - '$MINIO_HOME/data:/data'
-    command: server /data --console-address ':9090' --address ':9000'
 
-## Service container for creating backets
+## Creates the buckets for GitLab to use.
+# The service running a Minio CLI to set up a public buckets in the Minio storage for GitLab’s LFS objects
   createbuckets:
     image: minio/mc
     container_name: createbuckets
-    depends_on:
-      - minio
+
     env_file:
       - buckets.env
       - minio.env
     entrypoint: >
       /bin/sh -c "
       /usr/bin/mc alias set lfs-obj http://192.168.1.10:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
-
       /usr/bin/mc mb lfs-obj/${ARTIFACTS};
       /usr/bin/mc mb lfs-obj/${DIFFS};
       /usr/bin/mc mb lfs-obj/${LFS};
@@ -102,7 +125,6 @@ services:
       /usr/bin/mc mb lfs-obj/${TF_STATE};
       /usr/bin/mc mb lfs-obj/${CI_SECURE_FILES};
       /usr/bin/mc mb lfs-obj/${PAGES};
-
       /usr/bin/mc policy set public lfs-obj/${ARTIFACTS};
       /usr/bin/mc policy set public lfs-obj/${DIFFS};
       /usr/bin/mc policy set public lfs-obj/${LFS};
@@ -115,18 +137,64 @@ services:
 
       exit 0;
       "
+    depends_on:
+      - minio
+
     networks:
       gitlab_minio:
 
-## --------------------------- GitLab Runner -----------------------------
+## --------------------------- GitLab CI/CD Runner -----------------------------  
   gitlab-cicd-runner:
     image: gitlab/gitlab-runner:latest
     container_name:  gitlab-runner
-    restart: always
-    depends_on:
-      - gitlab
+
     volumes:
       - '/srv/gitlab-runner/config:/etc/gitlab-runner'
       - '/var/run/docker.sock:/var/run/docker.sock'
+
+    networks:
+      gitlab_minio:
+
+    restart: always    
+    depends_on:
+      - gitlab
+
+## --------------------------- SonarQube server -----------------------------
+  sonarqube:
+    image: sonarqube:community
+    container_name: sonarqube
+
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+
+    ports:
+      - "7777:9000"
+
+    networks:
+      gitlab_minio:
+        ipv4_address: 192.168.1.70
+
+    depends_on:
+      - db
+
+# --------------------------- PostgreSQL for the SonarQube --------------------
+  db:
+    image: postgres:12
+    container_name: db
+
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+
+    volumes:
+      - postgresql:/var/lib/postgresql
+      - postgresql_data:/var/lib/postgresql/data
     networks:
       gitlab_minio:
